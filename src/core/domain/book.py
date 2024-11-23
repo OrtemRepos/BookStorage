@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from enum import StrEnum
 from typing import Any
 
@@ -27,7 +27,8 @@ class Book:
             self._status = status
         else:
             raise ValueError(
-                f"Invalid status: {status}. Expected: {BookStatus.ISSUED} or {BookStatus.IN_STOCK}"
+                f"Invalid status: {status}. Expected: {BookStatus.ISSUED}"
+                "or {BookStatus.IN_STOCK}"
             )
 
     def to_dict(self) -> dict[str, Any]:

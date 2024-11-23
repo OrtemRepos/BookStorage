@@ -1,9 +1,9 @@
 from typing import Protocol
 
 
-class SessionInterface(Protocol):
+class TransactionInterface(Protocol):
     def commit(self):
         pass
 
-    def rollback(self):
+    def roolback(self):
         pass
