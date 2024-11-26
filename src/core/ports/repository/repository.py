@@ -7,17 +7,17 @@ from src.core.dto.book_dto import BookDTO
 
 class BookRepositoryInterface(Protocol):
     @abstractmethod
-    def get(id: int) -> Book:
+    def get(self, id: int) -> Book:
         pass
 
     @abstractmethod
-    def create(book: BookDTO) -> int:
+    def create(self, book: BookDTO) -> int:
         pass
 
     @abstractmethod
-    def update(book_id: int, book: BookDTO) -> Book:
+    def update(self, book_id: int, book: BookDTO) -> Book:
         pass
 
     @abstractmethod
-    def delete(id: int) -> None:
+    def delete(self, id: int) -> None:
         pass

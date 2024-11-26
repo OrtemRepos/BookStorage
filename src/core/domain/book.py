@@ -10,25 +10,24 @@ class BookStatus(StrEnum):
 
 @dataclass
 class Book:
-    def __init__(self, id: int, title: str, author: str, year: int, status: BookStatus):
-        self.id = id
-        self.title = title
-        self.author = author
-        self.year = year
-        self._status = status
+    id: int
+    title: str
+    author: str
+    year: int
+    enum_status: BookStatus
 
     @property
     def status(self):
-        return self._status
+        return self.enum_status
 
     @status.setter
-    def status(self, status: BookStatus):
-        if self._status == BookStatus.ISSUED or status == BookStatus.IN_STOCK:
-            self._status = status
+    def status(self, value: BookStatus):
+        if value == BookStatus.ISSUED or value == BookStatus.IN_STOCK:
+            self.enum_status = value
         else:
             raise ValueError(
-                f"Invalid status: {status}. Expected: {BookStatus.ISSUED}"
-                "or {BookStatus.IN_STOCK}"
+                f"Invalid status: {value}. Expected: {BookStatus.ISSUED}"
+                f"or {BookStatus.IN_STOCK}"
             )
 
     def to_dict(self) -> dict[str, Any]:
@@ -41,5 +40,5 @@ class Book:
             title=data["title"],
             author=data["author"],
             year=data["year"],
-            status=data["status"],
+            enum_status=data["status"],
         )

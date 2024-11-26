@@ -27,3 +27,9 @@ select = [
 extend-select = [
     "I"
 ]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13.0",
+    "pytest>=8.3.3",
+]
