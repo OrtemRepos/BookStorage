@@ -1,11 +1,12 @@
 import json
+from collections.abc import Generator
 from dataclasses import is_dataclass
 from pathlib import Path
 from typing import Any
 
 from src.core.ports.database.database import DatabaseInterface, WriteAheadLogInterface
-from src.infrastructure.database.transaction import Transaction
-
+from src.infrastructure.database.transaction import Transaction, TransactionFactory
+from src.infrastructure.util import convert_keys_to_int
 
 def object_to_dict(obj: object) -> dict[str, Any] | object:
     if is_dataclass(obj):
@@ -22,7 +23,11 @@ class SimpleDatabase(DatabaseInterface):
         self._next_id = 0
         self._next_tid = 0
         self._next_lsn = 0
+        self._transaction_factory = self._transaction_generator()
         self.wal = wal
+
+    def sync(self):
+        self.wal.apply_log(self)
 
     def set(self, key: int, value: object):
         self.data[key] = object_to_dict(value)
@@ -42,46 +47,60 @@ class SimpleDatabase(DatabaseInterface):
     def get_all(self) -> list[object]:
         return list(self.data.values())
 
+    def _transaction_generator(self) -> Generator[Transaction, None, None]:
+        transaction = None
+        while True:
+            if transaction is not None and not transaction._committed:
+                transaction.commit()
+            transaction = TransactionFactory.create(self.next_tid, self, {})
+            yield transaction
+
     def begin_transaction(self):
-        return Transaction(self.next_tid, self)
+        return next(self._transaction_factory)
 
     @property
     def next_id(self) -> int:
+        id = self._next_id
         self._next_id += 1
-        return self._next_id
+        return id
 
     @property
     def next_tid(self) -> int:
+        id = self._next_tid
         self._next_tid += 1
-        return self._next_tid
+        return id
 
     @property
     def next_lsn(self) -> int:
+        id = self._next_lsn
         self._next_lsn += 1
-        return self._next_lsn
+        return id
 
 
 class JsonDatabase(DatabaseInterface):
     def __init__(self, json_filepath: str, wal: WriteAheadLogInterface):
         self.json_filepath = Path(json_filepath)
         self.wal = wal
+        self._transaction_factory = self._transaction_generator()
         self._load_data()
-        self.sync()
 
     @property
     def next_id(self) -> int:
+        id = self._next_id
         self._next_id += 1
-        return self._next_id
+        return id
 
     @property
     def next_tid(self) -> int:
+        id = self._next_tid
         self._next_tid += 1
-        return self._next_tid
+        return id
 
     @property
     def next_lsn(self) -> int:
+        id = self._next_lsn
         self._next_lsn += 1
-        return self._next_lsn
+        return id
 
     def _load_data(self) -> None:
         if not self.json_filepath.exists():
@@ -94,10 +113,11 @@ class JsonDatabase(DatabaseInterface):
             return
         with open(self.json_filepath) as f:
             json_to_load = json.load(f)
-            self.data = json_to_load["data"]
+            self.data = convert_keys_to_int(json_to_load["data"])
             self._next_id = json_to_load["next_id"]
             self._next_tid = json_to_load["next_tid"]
             self._next_lsn = json_to_load["next_lsn"]
+        self.sync()
 
     def _save_data(self) -> None:
         try:
@@ -112,12 +132,19 @@ class JsonDatabase(DatabaseInterface):
         except Exception as e:
             print("Error saving data\nTraceback:\n\t", e)
 
+    def _transaction_generator(self) -> Generator[Transaction, None, None]:
+        transaction = None
+        while True:
+            if transaction is not None:
+                transaction.commit(transaction)
+            transaction = Transaction(self.next_tid, self)
+            yield transaction
+
     def begin_transaction(self) -> Transaction:
-        next_tid = self.next_tid
-        return Transaction(next_tid, self)
+        return next(self._transaction_factory)
 
     def sync(self):
-        self.wal.apply_log()
+        self.wal.apply_log(self)
 
     def set(self, key: int, value: object):
         if key in self.data:

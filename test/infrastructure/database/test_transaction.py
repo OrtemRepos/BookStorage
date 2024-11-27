@@ -1,19 +1,19 @@
 import pytest
 
-from src.infrastructure.database.json_database import SimpleDatabase
+from src.infrastructure.database.json_database import SimpleDatabase, Transaction
 from src.infrastructure.database.operation import CreateOperation, DeleteOperation, SetOperation
 from src.infrastructure.database.write_ahead_logger import SimpleWAL
 
 
 @pytest.fixture
-def database():
+def database() -> SimpleDatabase:
     wal = SimpleWAL()
     db = SimpleDatabase(wal)
     return db
 
 
 @pytest.fixture
-def transaction(database):
+def transaction(database) -> Transaction:
     return database.begin_transaction()
 
 
@@ -42,11 +42,12 @@ def test_commit(database):
     assert database.get_all() == ["value1"]
 
 
-def test_rollback(transaction, database):
+def test_rollback(transaction):
     transaction.create(value="value1")
-    transaction.commit()
+    transaction.flush()
+    assert transaction.get_all() == ["value1"]
     transaction.rollback()
-    assert database.get_all() == []
+    assert transaction.get_all() == []
 
 
 def test_commit_with_error(transaction, database):
@@ -63,26 +64,27 @@ def test_rollback_with_error(transaction, database):
     assert database.get_all() == []
 
 
-def test_transaction_context_manager(transaction):
-    with transaction as session:
+def test_transaction_context_manager(database):
+    with database.begin_transaction() as session:
         session.create(value="value1")
-    assert transaction._db.get_all() == ["value1"]
+    assert database.get_all() == ["value1"]
 
 
-def test_transaction_context_manager_with_error(transaction):
-    with transaction:
-        transaction.set(key=1, value="value1")
+def test_transaction_context_manager_with_error(database):
+    with database.begin_transaction() as transaction:
+        transaction.create(value="value1")
         transaction._operations[0].execute = lambda: (1 / 0)
-    assert transaction._db.get(1) is None
+    assert database.get_all() == []
 
 
-def test_many_operations(transaction):
+def test_many_operations(database):
+    transaction = database.begin_transaction()
     transaction.create(value="value1")
     transaction.create(value="value2")
-    transaction.delete(key=1)
+    transaction.delete(key=0)
     assert len(transaction._operations) == 3
     transaction.commit()
-    assert transaction._db.get_all() == ["value2"]
+    assert database.get_all() == ["value2"]
 
 
 def test_many_transactions(database):
@@ -98,15 +100,15 @@ def test_many_transactions(database):
 def test_competitiveness_operations(database):
     transaction = database.begin_transaction()
     transaction.create(value="value1")
-    transaction.set(key=1, value="value2")
+    transaction.set(key=0, value="value2")
     transaction.commit()
-    assert database.get(1) == "value2"
+    assert database.get_all() == ["value2"]
 
 
 def test_competitiveness_operations_with_error(database):
     transaction = database.begin_transaction()
-    
+
     transaction.set(key=1, value="value2")
     transaction.create(value="value1")
-   
+
     assert database.get_all() == []
