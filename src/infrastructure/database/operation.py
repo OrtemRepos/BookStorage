@@ -1,6 +1,6 @@
 from typing import Any, cast
 
-from src.core.ports.database.database import Operation, TransactionInterface
+from src.core.ports.database import Operation, TransactionInterface
 
 
 class SetOperation(Operation):

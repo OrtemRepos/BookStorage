@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from src.core.ports.database.database import (
+from src.core.ports.database import (
     DatabaseInterface,
     TransactionInterface,
     WriteAheadLogInterface,
@@ -15,12 +15,12 @@ type LogDict = dict[int, dict[int, dict[str, Any]]]
 
 class SimpleWAL(WriteAheadLogInterface):
     def __init__(self):
-        self._log: list[TransactionInterface] = []
+        self._log = []
 
     def write_log[TransactionType: TransactionInterface](self, transaction: TransactionType):
         self._log.append(transaction)
 
-    def get_log(self) -> LogDict:
+    def get_log(self) -> list[TransactionInterface]:  # type: ignore
         return self._log
 
     def clear_log(self):
@@ -39,7 +39,6 @@ class WriteAheadLog(WriteAheadLogInterface):
     def _save_log(self):
         with open(self.log_filepath, "w") as f:
             json.dump(self._log, f)
-
 
     def _from_file(self) -> LogDict:
         if not Path(self.log_filepath).exists():

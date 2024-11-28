@@ -1,25 +1,25 @@
+from src.core.domain.book import Book, BookStatus
 from src.core.dto.book_dto import BookDTO, ReadBookDTO
-from src.core.ports.repository.uow import BookUnitOfWorkInterface
+from src.core.ports.repository import BookRepositoryInterface, TransactionInterface
 
 
 class BookService:
-    def __init__(self, uow: BookUnitOfWorkInterface):
-        self.uow = uow
+    def __init__(self, repository: BookRepositoryInterface):
+        self.repository = repository
 
-    def create(self, book: BookDTO) -> int:
-        with self.uow as repository:
-            return repository.create(book)
+    def create(self, book: BookDTO, session: TransactionInterface) -> int:
+        return self.repository.create(book, session)
 
-    def update(self, book_id: int, book: BookDTO) -> ReadBookDTO:
-        with self.uow as repository:
-            result = repository.update(book_id, book)
+    def set_status(self, id: int, status: BookStatus, session: TransactionInterface) -> Book:
+        old_book = self.repository.get(id, session)
+        new_book = BookDTO(
+            title=old_book.title, author=old_book.author, year=old_book.year, status=status
+        )
+        return self.repository.update(id, new_book, session)
+
+    def delete(self, id: int, session: TransactionInterface):
+        self.repository.delete(id, session)
+
+    def get(self, id: int, session: TransactionInterface) -> ReadBookDTO:
+        result = self.repository.get(id, session)
         return ReadBookDTO(**result.to_dict())
-
-    def delete(self, id: int):
-        with self.uow as repository:
-            repository.delete(id)
-
-    def get(self, id: int) -> ReadBookDTO:
-        with self.uow as repository:
-            result = repository.get(id)
-            return ReadBookDTO(**result.to_dict())

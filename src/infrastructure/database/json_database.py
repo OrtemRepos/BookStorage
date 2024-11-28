@@ -4,9 +4,10 @@ from dataclasses import is_dataclass
 from pathlib import Path
 from typing import Any
 
-from src.core.ports.database.database import DatabaseInterface, WriteAheadLogInterface
+from src.core.ports.database import DatabaseInterface, WriteAheadLogInterface
 from src.infrastructure.database.transaction import Transaction, TransactionFactory
 from src.infrastructure.util import convert_keys_to_int
+
 
 def object_to_dict(obj: object) -> dict[str, Any] | object:
     if is_dataclass(obj):

@@ -1,6 +1,6 @@
 from typing import Any, cast
 
-from src.core.ports.database.database import (
+from src.core.ports.database import (
     DatabaseInterface,
     Operation,
     TransactionInterface,
@@ -14,7 +14,8 @@ from src.infrastructure.database.operation import (
 
 
 def _remove_none(dictionary: dict) -> dict:
-        return dict(filter(lambda item: item[1] is not None, dictionary.items()))
+    return dict(filter(lambda item: item[1] is not None, dictionary.items()))
+
 
 class Transaction(TransactionInterface):
     def __init__(self, tid: int, storage: DatabaseInterface):
@@ -55,7 +56,6 @@ class Transaction(TransactionInterface):
         operation = DeleteOperation(key, self)
         self._operations.append(operation)
 
-
     def create(self, value: object) -> int:
         operation = CreateOperation(value, self)
         key = self.block_id
@@ -82,7 +82,7 @@ class Transaction(TransactionInterface):
             self.flush()
             old_data = self._storage.data.copy()
             old_data.update(self._temp_data)
-            self._storage._next_id = self._block_id
+            self._storage._next_id = self._block_id or self._storage._next_id
             self._storage.data = _remove_none(old_data)
             if with_wal:
                 self._storage.wal.write_log(self)

@@ -74,6 +74,7 @@ def test_transaction(db):
     assert transaction.tid == 0
     assert transaction._storage == db
 
+
 def test_sync(db, wal):
     transaction = db.begin_transaction()
     transaction.create(value={"name": "test"})
