@@ -111,6 +111,7 @@ class JsonDatabase(DatabaseInterface):
             self._next_id = 0
             self._next_tid = 0
             self._next_lsn = 0
+            self._save_data()
             return
         with open(self.json_filepath) as f:
             json_to_load = json.load(f)

@@ -1,11 +1,11 @@
-from src.core.domain.book import Book
+from src.core.dto.book_dto import ReadBookDTO
 from src.core.ports.database import TransactionInterface
-from src.core.ports.repository import BookRepositoryInterface
+from src.core.service.book_service import BookService
 
 
 class getBookUsecase:
-    def __init__(self, repository: BookRepositoryInterface):
-        self.repository = repository
+    def __init__(self, service: BookService):
+        self.service = service
 
-    def execute(self, id: int, session: TransactionInterface) -> Book:
-        return self.repository.get(id, session)
+    def execute(self, id: int, session: TransactionInterface) -> ReadBookDTO:
+        return self.service.get(id, session)

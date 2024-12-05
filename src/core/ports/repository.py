@@ -1,9 +1,9 @@
 from abc import abstractmethod
 from typing import Protocol
 
-from src.core.ports.database import TransactionInterface
 from src.core.domain.book import Book
 from src.core.dto.book_dto import BookDTO
+from src.core.ports.database import TransactionInterface
 
 
 class BookRepositoryInterface(Protocol):

@@ -42,6 +42,8 @@ class WriteAheadLog(WriteAheadLogInterface):
 
     def _from_file(self) -> LogDict:
         if not Path(self.log_filepath).exists():
+            self._log = {}
+            self._save_log()
             return {}
         try:
             log = {}

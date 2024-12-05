@@ -1,10 +1,10 @@
 from src.core.ports.database import TransactionInterface
-from src.core.ports.repository import BookRepositoryInterface
+from src.core.service.book_service import BookService
 
 
 class deleteBookUsecase:
-    def __init__(self, repository: BookRepositoryInterface):
-        self.repository = repository
+    def __init__(self, service: BookService):
+        self.service = service
 
     def execute(self, id: int, session: TransactionInterface):
-        self.repository.delete(id, session)
+        self.service.delete(id, session)
